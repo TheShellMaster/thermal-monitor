@@ -1,0 +1,15 @@
+{
+  "name": "thermal-monitor",
+  "version": "1.0.0",
+  "description": "Cross-platform hardware thermal monitoring dashboard",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "systeminformation": "^5.22.9"
+  }
+}

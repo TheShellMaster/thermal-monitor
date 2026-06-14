@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroTherm | Surveillance Thermique Matérielle</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- System Alert Banner (flashes when temp is critical) -->
+  <div id="danger-banner" class="danger-banner hidden">
+    <div class="banner-content">
+      <svg class="warning-icon" viewBox="0 0 24 24" width="24" height="24">
+        <path fill="currentColor" d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+      </svg>
+      <span>ALERTE THERMIQUE : Le processeur dépasse le seuil critique !</span>
+    </div>
+  </div>
+
+  <div class="dashboard-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-section">
+        <svg class="logo-icon" viewBox="0 0 24 24" width="32" height="32">
+          <path fill="url(#grad-logo)" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          <defs>
+            <linearGradient id="grad-logo" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#ff8a00;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#e52e71;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="title-meta">
+          <h1>AeroTherm</h1>
+          <p class="subtitle">Surveillance Matérielle & Thermique</p>
+        </div>
+      </div>
+      <div class="status-indicator">
+        <span class="pulse-dot active"></span>
+        <span id="connection-status">Connexion en cours...</span>
+      </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="dashboard-grid">
+      <!-- 1. Real-time Gauges (Col 1-2) -->
+      <section class="card stats-card">
+        <h2 class="card-title">Mesures en temps réel</h2>
+        <div class="gauges-container">
+          <!-- Temp Gauge -->
+          <div class="gauge-box">
+            <div class="circular-progress" id="temp-gauge-progress">
+              <div class="inner-circle">
+                <span class="value" id="temp-value">--</span>
+                <span class="unit">°C</span>
+              </div>
+            </div>
+            <p class="gauge-label">Température CPU</p>
+            <span class="sub-value" id="temp-max-val">Max: --°C</span>
+          </div>
+
+          <!-- CPU Load Gauge -->
+          <div class="gauge-box">
+            <div class="circular-progress" id="cpu-gauge-progress">
+              <div class="inner-circle">
+                <span class="value" id="cpu-value">--</span>
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <p class="gauge-label">Charge CPU</p>
+            <span class="sub-value" id="cpu-cores-count">-- cœurs</span>
+          </div>
+
+          <!-- RAM Gauge -->
+          <div class="gauge-box">
+            <div class="circular-progress" id="ram-gauge-progress">
+              <div class="inner-circle">
+                <span class="value" id="ram-value">--</span>
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <p class="gauge-label">Utilisation RAM</p>
+            <span class="sub-value" id="ram-details">-- / -- GB</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Alert Settings & Configuration (Col 3) -->
+      <section class="card settings-card">
+        <h2 class="card-title">Configuration des Alertes</h2>
+        <div class="settings-list">
+          <div class="settings-item range-item">
+            <div class="label-row">
+              <span class="setting-label">Seuil de température critique</span>
+              <span class="setting-value" id="threshold-val">75°C</span>
+            </div>
+            <input type="range" id="temp-threshold" min="40" max="95" value="75" class="slider">
+          </div>
+
+          <div class="settings-item toggle-item">
+            <div class="setting-info">
+              <span class="setting-label">Notifications Système</span>
+              <p class="setting-desc">Alerter lorsque la limite est dépassée</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="notify-toggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-item toggle-item">
+            <div class="setting-info">
+              <span class="setting-label">Alerte Sonore</span>
+              <p class="setting-desc">Jouer un bip lors d'un pic de chaleur</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="sound-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. System Info (Col 1) -->
+      <section class="card system-info-card">
+        <h2 class="card-title">Informations Système</h2>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">Système d'Exploitation</span>
+            <span class="info-val" id="sys-os">Détection...</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Processeur</span>
+            <span class="info-val" id="sys-cpu">Détection...</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Mémoire Totale</span>
+            <span class="info-val" id="sys-ram">Détection...</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Nom d'Hôte</span>
+            <span class="info-val" id="sys-host">Détection...</span>
+          </div>
+          <div class="info-row" id="gpu-row" style="display:none;">
+            <span class="info-label">Carte Graphique</span>
+            <span class="info-val" id="sys-gpu">Détection...</span>
+          </div>
+          <div class="info-row" id="battery-row" style="display:none;">
+            <span class="info-label">Batterie / État</span>
+            <span class="info-val" id="sys-battery">Détection...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Historical Temperature Chart (Col 2-3) -->
+      <section class="card chart-card">
+        <h2 class="card-title">Historique Thermique (60s)</h2>
+        <div class="chart-wrapper">
+          <canvas id="tempChart"></canvas>
+        </div>
+      </section>
+
+      <!-- 5. Thermal Tips / Action Guide (Full width / Col 1-3) -->
+      <section class="card tips-card">
+        <h2 class="card-title">Guide d'Optimisation Thermique</h2>
+        <div class="tips-grid">
+          <div class="tip-box">
+            <div class="tip-icon-wrapper cyan">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            <h3>Surfaces planes et dures</h3>
+            <p>Posez toujours votre ordinateur sur un bureau ou une table. Évitez les lits ou couvertures qui bouchent les grilles d'aération.</p>
+          </div>
+
+          <div class="tip-box">
+            <div class="tip-icon-wrapper orange">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-15h-2v6h2V7zm0 8h-2v2h2v-2z"/>
+              </svg>
+            </div>
+            <h3>Fermer les processus lourds</h3>
+            <p>Utilisez le gestionnaire de tâches pour fermer les applications gourmandes en arrière-plan qui sollicitent inutilement votre CPU.</p>
+          </div>
+
+          <div class="tip-box">
+            <div class="tip-icon-wrapper pink">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M19.36 10.04L20.5 8.9c.39-.39.39-1.02 0-1.41L16.5 3.5c-.39-.39-1.02-.39-1.41 0l-1.14 1.14c-1.28-.6-2.73-.89-4.23-.78-2.61.19-4.93 1.94-5.91 4.39C2.79 10.82 3 13.92 4.29 16.3c.33.62 1.05.95 1.7.72.65-.23.95-.93.72-1.58C5.83 13.84 5.71 11.66 6.36 9.8c.7-.93 1.83-1.63 3.09-1.8 1.4-.18 2.8.21 3.86 1.05l-1.8 1.8c-.39.39-.39 1.02 0 1.41l3.99 3.99c.39.39 1.02.39 1.41 0l1.8-1.8c1.39 1.55 2.11 3.58 2.05 5.66-.02.66.5 1.21 1.16 1.23.66.02 1.21-.5 1.23-1.16.1-2.9-.91-5.74-2.8-7.94z"/>
+              </svg>
+            </div>
+            <h3>Nettoyage physique</h3>
+            <p>Si la température reste élevée au repos, de la poussière est peut-être accumulée sur les ventilateurs ou la pâte thermique est à changer.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>AeroTherm v1.0.0 — Fait avec amour pour la sécurité de votre matériel.</p>
+    </footer>
+  </div>
+
+  <!-- Load Socket.io Client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Load Client JS Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
