@@ -2,14 +2,57 @@
   "name": "thermal-monitor",
   "version": "1.0.0",
   "description": "Cross-platform hardware thermal monitoring dashboard",
-  "main": "server.js",
+  "main": "main.js",
   "type": "module",
+  "author": {
+    "name": "DJAKOUA KWANKAM BRAYAN STEVE",
+    "email": "brayan@example.com"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "electron:start": "electron .",
+    "dist": "electron-builder"
   },
   "dependencies": {
+    "electron-updater": "^6.3.9",
     "express": "^4.19.2",
     "socket.io": "^4.7.5",
     "systeminformation": "^5.22.9"
+  },
+  "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.theshellmaster.aerotherm",
+    "productName": "AeroTherm",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "TheShellMaster",
+        "repo": "thermal-monitor"
+      }
+    ],
+    "files": [
+      "package.json",
+      "server.js",
+      "main.js",
+      "public/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "System"
+    }
   }
 }
