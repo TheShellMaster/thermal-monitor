@@ -52,8 +52,8 @@
     <main class="dashboard-grid">
       <!-- 1. Real-time Gauges (Col 1-2) -->
       <section class="card stats-card">
-        <h2 class="card-title">Mesures en temps réel</h2>
-        <div class="gauges-container">
+        <h2 class="card-title">Mesures Principales</h2>
+        <div class="gauges-container" id="main-gauges">
           <!-- Temp Gauge -->
           <div class="gauge-box">
             <div class="circular-progress" id="temp-gauge-progress">
@@ -92,48 +92,21 @@
         </div>
       </section>
 
-      <!-- 2. Alert Settings & Configuration (Col 3) -->
-      <section class="card settings-card">
-        <h2 class="card-title">Configuration des Alertes</h2>
-        <div class="settings-list">
-          <div class="settings-item range-item">
-            <div class="label-row">
-              <span class="setting-label">Seuil de température critique</span>
-              <span class="setting-value" id="threshold-val">75°C</span>
-            </div>
-            <input type="range" id="temp-threshold" min="40" max="95" value="75" class="slider">
-          </div>
-
-          <div class="settings-item toggle-item">
-            <div class="setting-info">
-              <span class="setting-label">Notifications Système</span>
-              <p class="setting-desc">Alerter lorsque la limite est dépassée</p>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="notify-toggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-item toggle-item">
-            <div class="setting-info">
-              <span class="setting-label">Alerte Sonore</span>
-              <p class="setting-desc">Jouer un bip lors d'un pic de chaleur</p>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="sound-toggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
+      <!-- 2. Dynamic Component Gauges (GPU, etc.) (Col 3) -->
+      <section class="card dynamic-components-card">
+        <h2 class="card-title">Composants Détectés</h2>
+        <div id="dynamic-gauges-container" class="dynamic-list">
+          <!-- Dynamically populated by app.js -->
+          <p class="empty-msg">Recherche de composants additionnels...</p>
         </div>
       </section>
 
       <!-- 3. System Info (Col 1) -->
       <section class="card system-info-card">
-        <h2 class="card-title">Informations Système</h2>
-        <div class="info-list">
+        <h2 class="card-title">Informations Matérielles</h2>
+        <div class="info-list" id="hardware-info-list">
           <div class="info-row">
-            <span class="info-label">Système d'Exploitation</span>
+            <span class="info-label">Système</span>
             <span class="info-val" id="sys-os">Détection...</span>
           </div>
           <div class="info-row">
@@ -141,29 +114,59 @@
             <span class="info-val" id="sys-cpu">Détection...</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Mémoire Totale</span>
-            <span class="info-val" id="sys-ram">Détection...</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Nom d'Hôte</span>
+            <span class="info-label">Hôte</span>
             <span class="info-val" id="sys-host">Détection...</span>
           </div>
-          <div class="info-row" id="gpu-row" style="display:none;">
-            <span class="info-label">Carte Graphique</span>
-            <span class="info-val" id="sys-gpu">Détection...</span>
-          </div>
+        </div>
+        
+        <h3 class="card-subtitle">Alimentation & Énergie</h3>
+        <div class="info-list">
           <div class="info-row" id="battery-row" style="display:none;">
-            <span class="info-label">Batterie / État</span>
+            <span class="info-label">Batterie</span>
             <span class="info-val" id="sys-battery">Détection...</span>
           </div>
+          <div id="extra-power-info"></div>
         </div>
       </section>
 
       <!-- 4. Historical Temperature Chart (Col 2-3) -->
       <section class="card chart-card">
-        <h2 class="card-title">Historique Thermique (60s)</h2>
+        <h2 class="card-title">Analyse Thermique Temporelle</h2>
         <div class="chart-wrapper">
           <canvas id="tempChart"></canvas>
+        </div>
+      </section>
+
+      <!-- 5. Storage & Network (Col 1-2) -->
+      <section class="card storage-network-card">
+        <div class="split-card-content">
+          <div class="storage-section">
+            <h2 class="card-title">Stockage & Disques</h2>
+            <div id="storage-list" class="mini-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+          <div class="network-section">
+            <h2 class="card-title">Flux Réseau</h2>
+            <div class="net-stats-box">
+              <div class="net-stat">
+                <span class="net-label">Download</span>
+                <span class="net-val" id="net-down">0 KB/s</span>
+              </div>
+              <div class="net-stat">
+                <span class="net-label">Upload</span>
+                <span class="net-val" id="net-up">0 KB/s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. All Thermal Sensors (Col 3) -->
+      <section class="card sensors-card">
+        <h2 class="card-title">Tous les Capteurs Thermiques</h2>
+        <div id="all-sensors-list" class="sensor-grid">
+          <!-- Dynamically populated -->
         </div>
       </section>
 

@@ -112,16 +112,19 @@ function readLinuxTemperatures() {
 // Get dynamic statistics
 async function getDynamicInfo() {
   try {
-    const [mem, currentLoad, graphics, battery] = await Promise.all([
+    const [mem, currentLoad, graphics, battery, fsSize, networkStats, diskIO] = await Promise.all([
       si.mem(),
       si.currentLoad(),
       si.graphics(),
-      si.battery()
+      si.battery(),
+      si.fsSize(),
+      si.networkStats(),
+      si.disksIO()
     ]);
 
     // Retrieve CPU temperatures (try SI library first, then Linux sysfs fallback)
     let temp = await si.cpuTemperature();
-    if (!temp || temp.main === -1 || temp.main === null) {
+    if (!temp || temp.main === -1 || temp.main === null || (Array.isArray(temp.cores) && temp.cores.length === 0)) {
       const fallbackTemp = readLinuxTemperatures();
       if (fallbackTemp) {
         temp = fallbackTemp;
@@ -135,18 +138,38 @@ async function getDynamicInfo() {
       temp: gpu.temperatureGpu || null,
       utilization: gpu.utilizationGpu || null,
       memoryTotal: gpu.memoryTotal || null,
-      memoryUsed: gpu.memoryUsed || null
+      memoryUsed: gpu.memoryUsed || null,
+      fanSpeed: gpu.fanSpeed || null
     }));
+
+    // Format Storage Info
+    const storage = fsSize.map(fs => ({
+      fs: fs.fs,
+      type: fs.type,
+      size: fs.size,
+      used: fs.used,
+      available: fs.available,
+      use: fs.use,
+      mount: fs.mount
+    })).filter(s => s.size > 0);
+
+    // Network Stats (sum of all interfaces)
+    const net = {
+      rx_sec: networkStats.reduce((acc, current) => acc + (current.rx_sec || 0), 0),
+      tx_sec: networkStats.reduce((acc, current) => acc + (current.tx_sec || 0), 0)
+    };
 
     return {
       timestamp: Date.now(),
       temperature: {
         main: temp.main || 0,
         cores: temp.cores || [],
-        max: temp.max || 0
+        max: temp.max || 0,
+        chips: temp.chips || []
       },
       cpuLoad: {
         currentLoad: currentLoad.currentLoad || 0,
+        avgLoad: currentLoad.avgLoad,
         cores: (currentLoad.cpus || []).map(c => c.load)
       },
       ram: {
@@ -154,6 +177,7 @@ async function getDynamicInfo() {
         free: mem.free,
         used: mem.used,
         active: mem.active,
+        available: mem.available,
         percentage: (mem.used / mem.total) * 100
       },
       gpus: gpus,
@@ -161,8 +185,13 @@ async function getDynamicInfo() {
         hasBattery: battery.hasBattery,
         isCharging: battery.isCharging,
         percent: battery.percent,
-        type: battery.type
-      }
+        type: battery.type,
+        capacity: battery.capacityUnit,
+        voltage: battery.voltage
+      },
+      storage: storage,
+      network: net,
+      diskIO: diskIO
     };
   } catch (error) {
     console.error('Error fetching dynamic info:', error);
@@ -172,7 +201,9 @@ async function getDynamicInfo() {
       cpuLoad: { currentLoad: 0, cores: [] },
       ram: { total: 0, free: 0, used: 0, active: 0, percentage: 0 },
       gpus: [],
-      battery: { hasBattery: false, isCharging: false, percent: 0, type: '' }
+      battery: { hasBattery: false, isCharging: false, percent: 0, type: '' },
+      storage: [],
+      network: { rx_sec: 0, tx_sec: 0 }
     };
   }
 }

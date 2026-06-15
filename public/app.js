@@ -22,12 +22,17 @@ const ramProgress = document.getElementById('ram-gauge-progress');
 // System Info
 const sysOs = document.getElementById('sys-os');
 const sysCpu = document.getElementById('sys-cpu');
-const sysRam = document.getElementById('sys-ram');
 const sysHost = document.getElementById('sys-host');
-const gpuRow = document.getElementById('gpu-row');
-const sysGpu = document.getElementById('sys-gpu');
 const batteryRow = document.getElementById('battery-row');
 const sysBattery = document.getElementById('sys-battery');
+const extraPowerInfo = document.getElementById('extra-power-info');
+
+// Dynamic Containers
+const dynamicGaugesContainer = document.getElementById('dynamic-gauges-container');
+const storageList = document.getElementById('storage-list');
+const allSensorsList = document.getElementById('all-sensors-list');
+const netDownVal = document.getElementById('net-down');
+const netUpVal = document.getElementById('net-up');
 
 // Settings
 const thresholdSlider = document.getElementById('temp-threshold');
@@ -47,39 +52,42 @@ let audioCtx = null;
 let lastBeepTime = 0;
 
 // Initialize Settings Inputs
-thresholdSlider.value = tempThreshold;
-thresholdVal.textContent = `${tempThreshold}°C`;
-notifyToggle.checked = notifyEnabled;
-soundToggle.checked = soundEnabled;
+if (thresholdSlider) {
+    thresholdSlider.value = tempThreshold;
+    thresholdVal.textContent = `${tempThreshold}°C`;
+    thresholdSlider.addEventListener('input', (e) => {
+        tempThreshold = parseInt(e.target.value);
+        thresholdVal.textContent = `${tempThreshold}°C`;
+        localStorage.setItem('tempThreshold', tempThreshold);
+        initAudioContext();
+    });
+}
 
-// Event Listeners for Settings
-thresholdSlider.addEventListener('input', (e) => {
-  tempThreshold = parseInt(e.target.value);
-  thresholdVal.textContent = `${tempThreshold}°C`;
-  localStorage.setItem('tempThreshold', tempThreshold);
-  initAudioContext(); // Resume audio context on user interaction
-});
+if (notifyToggle) {
+    notifyToggle.checked = notifyEnabled;
+    notifyToggle.addEventListener('change', async (e) => {
+        notifyEnabled = e.target.checked;
+        localStorage.setItem('notifyEnabled', notifyEnabled);
+        
+        if (notifyEnabled && Notification.permission !== 'granted') {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                alert("Veuillez autoriser les notifications dans votre navigateur.");
+                notifyToggle.checked = false;
+                notifyEnabled = false;
+            }
+        }
+    });
+}
 
-notifyToggle.addEventListener('change', async (e) => {
-  notifyEnabled = e.target.checked;
-  localStorage.setItem('notifyEnabled', notifyEnabled);
-  
-  if (notifyEnabled && Notification.permission !== 'granted') {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      alert("Veuillez autoriser les notifications dans votre navigateur pour recevoir les alertes.");
-      notifyToggle.checked = false;
-      notifyEnabled = false;
-      localStorage.setItem('notifyEnabled', false);
-    }
-  }
-});
-
-soundToggle.addEventListener('change', (e) => {
-  soundEnabled = e.target.checked;
-  localStorage.setItem('soundEnabled', soundEnabled);
-  initAudioContext();
-});
+if (soundToggle) {
+    soundToggle.checked = soundEnabled;
+    soundToggle.addEventListener('change', (e) => {
+        soundEnabled = e.target.checked;
+        localStorage.setItem('soundEnabled', soundEnabled);
+        initAudioContext();
+    });
+}
 
 // Enable Audio on any click to prevent browser autoplay block
 document.body.addEventListener('click', () => {
@@ -95,30 +103,24 @@ function initAudioContext() {
   }
 }
 
-// Generate synthesizer alarm sound
 function playAlertChime() {
   if (!soundEnabled) return;
   const now = Date.now();
-  if (now - lastBeepTime < 3500) return; // Debounce alarm sound
+  if (now - lastBeepTime < 3500) return;
   lastBeepTime = now;
 
   try {
     initAudioContext();
     if (!audioCtx) return;
-
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(800, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.4);
-
     gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-
     osc.start();
     osc.stop(audioCtx.currentTime + 0.4);
   } catch (error) {
@@ -126,22 +128,18 @@ function playAlertChime() {
   }
 }
 
-// Desktop notification helper
 function sendDesktopNotification(currentTemp) {
   if (!notifyEnabled) return;
   if (Notification.permission === 'granted') {
     new Notification("🔥 Alerte Température CPU", {
-      body: `La température du CPU a atteint ${currentTemp}°C, dépassant le seuil de ${tempThreshold}°C !`,
-      tag: 'thermal-alert',
-      requireInteraction: false
+      body: `La température du CPU a atteint ${currentTemp}°C !`,
+      tag: 'thermal-alert'
     });
   }
 }
 
 // Initialize Chart.js
 const ctx = document.getElementById('tempChart').getContext('2d');
-
-// Chart styles and gradients
 const chartGradient = ctx.createLinearGradient(0, 0, 0, 250);
 chartGradient.addColorStop(0, 'rgba(229, 46, 113, 0.4)');
 chartGradient.addColorStop(1, 'rgba(229, 46, 113, 0.0)');
@@ -167,35 +165,12 @@ const tempChart = new Chart(ctx, {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: true,
-        labels: {
-          color: '#8a8ab0',
-          font: { family: 'Outfit', size: 12 }
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(15, 15, 30, 0.95)',
-        titleFont: { family: 'Outfit' },
-        bodyFont: { family: 'Outfit' },
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1
-      }
+      legend: { display: true },
+      tooltip: { enabled: true }
     },
     scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#8a8ab0' }
-      },
-      y: {
-        min: 25,
-        max: 95,
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: {
-          color: '#8a8ab0',
-          callback: function(value) { return value + '°C'; }
-        }
-      }
+      x: { grid: { display: false } },
+      y: { min: 25, max: 95 }
     }
   }
 });
@@ -212,25 +187,9 @@ socket.on('disconnect', () => {
 });
 
 socket.on('system-static', (data) => {
-  // OS Details
-  sysOs.textContent = `${data.os.distro} ${data.os.release} (${data.os.platform})`;
-  
-  // CPU Model
-  sysCpu.textContent = `${data.cpu.manufacturer} ${data.cpu.brand} (${data.cpu.cores} cœurs)`;
-  
-  // Total Memory
-  totalRamBytes = data.ram.total || 0;
-  if (totalRamBytes > 0) {
-    const totalGB = (totalRamBytes / (1024 * 1024 * 1024)).toFixed(1);
-    sysRam.textContent = `${totalGB} GB`;
-  } else {
-    sysRam.textContent = 'Indisponible';
-  }
-
-  // Hostname
+  sysOs.textContent = `${data.os.distro} ${data.os.release}`;
+  sysCpu.textContent = `${data.cpu.manufacturer} ${data.cpu.brand}`;
   sysHost.textContent = data.os.hostname;
-
-  // Set logical CPU cores text
   cpuCoresCount.textContent = `${data.cpu.cores} cœurs`;
 });
 
@@ -252,20 +211,12 @@ socket.on('system-dynamic', (data) => {
   const currentTemp = Math.round(data.temperature.main);
   if (currentTemp > 0) {
     tempValue.textContent = currentTemp;
-    
-    // Update Max Temperature Seen
     if (currentTemp > maxTempSeen) {
       maxTempSeen = currentTemp;
       tempMaxVal.textContent = `Max: ${maxTempSeen}°C`;
     }
-    
-    // Update Circular temperature gauge
     updateCircularProgress(tempProgress, (currentTemp / 100) * 100, getTempColor(currentTemp));
-
-    // Append to Chart.js
     addChartData(currentTemp);
-
-    // Thermal Alert Threshold Verification
     if (currentTemp >= tempThreshold) {
       dangerBanner.classList.remove('hidden');
       playAlertChime();
@@ -273,39 +224,72 @@ socket.on('system-dynamic', (data) => {
     } else {
       dangerBanner.classList.add('hidden');
     }
-  } else {
-    tempValue.textContent = '--';
   }
 
-  // Update GPU Info if any GPU is present
-  if (data.gpus && data.gpus.length > 0) {
-    gpuRow.style.display = 'flex';
-    const primaryGpu = data.gpus[0];
-    let gpuText = `${primaryGpu.name}`;
-    if (primaryGpu.temp !== null) {
-      gpuText += ` (${primaryGpu.temp}°C)`;
-    }
-    sysGpu.textContent = gpuText;
-  } else {
-    gpuRow.style.display = 'none';
-  }
+  renderDynamicGauges(data);
+  renderStorage(data.storage);
+  netDownVal.textContent = formatSpeed(data.network.rx_sec);
+  netUpVal.textContent = formatSpeed(data.network.tx_sec);
+  renderThermalSensors(data.temperature);
 
-  // Update Battery Info if present
   if (data.battery && data.battery.hasBattery) {
     batteryRow.style.display = 'flex';
-    let batteryText = `${data.battery.percent}%`;
-    if (data.battery.isCharging) {
-      batteryText += ' (En charge)';
-    } else {
-      batteryText += ' (Sur batterie)';
-    }
-    sysBattery.textContent = batteryText;
+    sysBattery.textContent = `${data.battery.percent}% ${data.battery.isCharging ? '(Charge)' : ''}`;
   } else {
     batteryRow.style.display = 'none';
   }
 });
 
-// Helper functions for updating UI gauges
+function renderDynamicGauges(data) {
+  dynamicGaugesContainer.innerHTML = '';
+  if (data.gpus && data.gpus.length > 0) {
+    data.gpus.forEach(gpu => {
+      const gpuItem = document.createElement('div');
+      gpuItem.className = 'dynamic-item';
+      const usage = gpu.utilization !== null ? gpu.utilization : 0;
+      gpuItem.innerHTML = `
+        <div class="item-header"><span>🎮 ${gpu.name}</span><span>${gpu.temp || '--'}°C | ${usage}%</span></div>
+        <div class="item-bar-bg"><div class="item-bar-fill" style="width: ${usage}%; background: ${getLoadColor(usage)}"></div></div>
+      `;
+      dynamicGaugesContainer.appendChild(gpuItem);
+    });
+  } else {
+    dynamicGaugesContainer.innerHTML = '<p class="empty-msg">Aucun GPU additionnel.</p>';
+  }
+}
+
+function renderStorage(storageData) {
+  storageList.innerHTML = '';
+  if (storageData) {
+    storageData.slice(0, 4).forEach(disk => {
+      const diskItem = document.createElement('div');
+      diskItem.className = 'storage-item';
+      diskItem.innerHTML = `
+        <div class="storage-info"><span>💽 ${disk.mount}</span><span>${disk.use.toFixed(1)}%</span></div>
+        <div class="item-bar-bg"><div class="item-bar-fill" style="width: ${disk.use}%; background: ${getLoadColor(disk.use)}"></div></div>
+      `;
+      storageList.appendChild(diskItem);
+    });
+  }
+}
+
+function renderThermalSensors(tempData) {
+  allSensorsList.innerHTML = '';
+  if (tempData.cores) {
+    tempData.cores.forEach((temp, i) => addSensorBox(`Core ${i}`, temp));
+  }
+  if (tempData.chips) {
+    tempData.chips.forEach((temp, i) => addSensorBox(`Chip ${i}`, temp));
+  }
+}
+
+function addSensorBox(label, value) {
+  const box = document.createElement('div');
+  box.className = 'sensor-box';
+  box.innerHTML = `<span class="sensor-label">${label}</span><span class="sensor-value" style="color: ${getTempColor(value)}">${Math.round(value)}°C</span>`;
+  allSensorsList.appendChild(box);
+}
+
 function updateCircularProgress(element, value, color) {
   const degrees = (value / 100) * 360;
   element.style.setProperty('--progress-color', color);
@@ -313,29 +297,29 @@ function updateCircularProgress(element, value, color) {
 }
 
 function getLoadColor(value) {
-  if (value < 50) return 'var(--color-cyan)';
-  if (value < 80) return 'var(--color-orange)';
-  return 'var(--color-red)';
+  if (value < 50) return '#00f0ff';
+  if (value < 80) return '#ffaa00';
+  return '#ff3366';
 }
 
 function getTempColor(value) {
-  if (value < 55) return 'var(--color-green)';
-  if (value < 75) return 'var(--color-orange)';
-  return 'var(--color-red)';
+  if (value < 55) return '#00ff88';
+  if (value < 75) return '#ffaa00';
+  return '#ff3366';
 }
 
-// Chart.js updates
 function addChartData(value) {
-  const timeString = new Date().toLocaleTimeString('fr-FR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  
+  const timeString = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   tempChart.data.labels.push(timeString);
   tempChart.data.datasets[0].data.push(value);
-
-  // Keep last 40 entries
   if (tempChart.data.labels.length > 40) {
     tempChart.data.labels.shift();
     tempChart.data.datasets[0].data.shift();
   }
+  tempChart.update('none');
+}
 
-  tempChart.update('none'); // Update without transition animation for better rendering speed
+function formatSpeed(bytesPerSec) {
+  const kbs = bytesPerSec / 1024;
+  return kbs < 1024 ? `${kbs.toFixed(1)} KB/s` : `${(kbs / 1024).toFixed(1)} MB/s`;
 }
