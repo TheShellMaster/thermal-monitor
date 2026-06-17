@@ -1,0 +1,15 @@
+{
+  "refresh_interval": 1.0,
+  "cpu_temp_warn": 75.0,
+  "cpu_temp_crit": 90.0,
+  "gpu_temp_warn": 80.0,
+  "gpu_temp_crit": 95.0,
+  "ram_percent_warn": 85.0,
+  "ram_percent_crit": 95.0,
+  "disk_percent_warn": 90.0,
+  "disk_percent_crit": 95.0,
+  "enable_notifications": true,
+  "enable_sound": true,
+  "theme": "dark",
+  "language": "fr"
+}

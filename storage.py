@@ -40,6 +40,20 @@ def init_db():
         db.connect()
         db.create_tables([Setting, ThermalRecord, AlertRecord])
         logger.info(f"Base de données SQLite initialisée à : {DB_PATH}")
+        
+        # Pré-remplir la table des paramètres à partir du fichier default_config.json si elle est vide
+        if Setting.select().count() == 0:
+            import json
+            config_path = os.path.join(os.path.dirname(__file__), "config", "default_config.json")
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        defaults = json.load(f)
+                    for k, v in defaults.items():
+                        Setting.create(key=k, value=str(v))
+                    logger.info("Base de données initialisée avec les paramètres par défaut.")
+                except Exception as ex:
+                    logger.error(f"Erreur de lecture de default_config.json : {ex}")
     except Exception as e:
         logger.error(f"Erreur d'initialisation de la base de données : {e}")
 
