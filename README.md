@@ -1,74 +1,85 @@
-# 🌡️ AeroTherm - Cross-Platform Hardware Thermal Monitor (v2.0)
+# 🌡️ AeroTherm - Cross-Platform Hardware Thermal Monitor (v3.0.0)
 
-[![GitHub license](https://img.shields.io/github/license/TheShellMaster/thermal-monitor?style=flat-square)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/TheShellMaster/thermal-monitor?style=flat-square)](https://github.com/TheShellMaster/thermal-monitor/stargazers)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-blue?style=flat-square)](https://nodejs.org)
+[![Python Support](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue?style=flat-square)](https://python.org)
 [![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-brightgreen?style=flat-square)](#)
 
-**AeroTherm v2.0** is a professional-grade, high-performance, and beautifully designed hardware monitoring dashboard. It doesn't just monitor your CPU; it adapts dynamically to any hardware configuration to track everything that generates heat and consumes resources in your machine.
+**AeroTherm v3.0.0** est une application de bureau native développée en **Python** avec une interface graphique **PyQt6**. Elle surveille en temps réel l'utilisation, les températures et l'état de santé de vos composants (CPU, GPU, RAM, Disques durs et SSD, Réseau et Batterie).
 
-> [!IMPORTANT]
-> **Version 2.0 (Pro)**: This update introduces universal component detection, multi-GPU monitoring, and real-time network/storage analysis.
-
----
-
-## ✨ Features (v2.0 PRO)
-
-* 🚀 **Universal Component Detection**: Automatically detects and adapts to your specific hardware. If you have 2 GPUs and 5 Hard Drives, AeroTherm shows them all.
-* 🎮 **Professional Multi-GPU Monitoring**: Tracks utilization and temperature for all detected graphics cards (Nvidia, AMD, Intel).
-* 💽 **Dynamic Storage Dashboard**: Live tracking of all mounted drives/partitions with real-time usage percentages and capacity analysis.
-* 🌐 **Live Network Streams**: Monitor your real-time Download and Upload speeds directly on the dashboard.
-* 🌡️ **Full Thermal Sensor Grid**: Accesses every available thermal sensor, including individual CPU cores and motherboard chipsets.
-* 📊 **Enhanced Glassmorphism UI**: Refined design with smoother animations, improved gauging system, and responsive layout for all screen sizes.
-* 📈 **Historical Charting**: High-resolution live line graphs tracking temperature records.
-* 🔔 **Smart Alerts**: Instantly triggers visual warnings, synthesizer beep alarms, and OS-level notifications when thresholds are breached.
+Cette version intègre un gestionnaire de processus permettant d'agir directement (tuer un processus, modifier sa priorité) en cas de charge thermique excessive.
 
 ---
 
-## 🚀 Getting Started
+## ✨ Fonctionnalités clés (v3.0.0 Pro Python)
 
-### Prerequisites
-Make sure you have **Node.js** (v18.0.0 or higher) installed on your system.
+* 🚀 **Moteur d'abstraction OS** : Couche unifiée détectant dynamiquement le système hôte (WMI / LibreHardwareMonitor sous Windows, `/sys/class/` / `lm-sensors` sous Linux).
+* 🎮 **Gestion multi-GPU** : Détection dynamique de GPU NVIDIA (NVML), AMD et Intel (lecture de l'utilisation et de la température).
+* 📋 **Gestionnaire de processus actif** : Liste en temps réel des processus les plus gourmands en CPU, avec possibilité d'arrêter (`kill`) un processus ou de modifier sa priorité (`nice`) d'un simple clic droit.
+* 🌡️ **Seuils d'alertes & notifications** : Personnalisez vos seuils de température ou de charge. Des notifications système (toasts Plyer) vous préviennent en cas de dépassement.
+* 💾 **Base de données SQLite** : Historise l'évolution thermique locale et enregistre le journal des alertes.
+* 📈 **Graphique historique** : Courbes de température en temps réel haute performance propulsées par `pyqtgraph`.
+* 💎 **UI Glassmorphism moderne** : Interface native élégante arborant un thème sombre soigné avec des jauges dessinées vectoriellement.
 
-* **Windows**: Download the installer from [nodejs.org](https://nodejs.org/).
-* **Linux (Ubuntu/Debian)**: 
+---
+
+## 🏃‍♂️ Démarrage rapide
+
+### Prérequis
+
+* **Python 3.11+**
+* **Linux (Ubuntu/Debian)** :
   ```bash
-  sudo apt update && sudo apt install nodejs npm -y
+  sudo apt update && sudo apt install lm-sensors -y
+  sudo sensors-detect --auto  # Pour scanner vos capteurs de température
   ```
 
----
+### Installation
 
-## 🏃‍♂️ How to Run
+1. Initialisez l'environnement virtuel (optionnel mais recommandé) :
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+2. Installez les dépendances :
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### Linux
+### Lancement
+
+Démarrez l'application principale :
 ```bash
-chmod +x start.sh
-./start.sh
+python3 main.py
 ```
-
-### Windows
-Double-click **`start.bat`** (or execute it in Command Prompt).
-
-*The application will automatically verify dependencies, start the background monitor server on port `3000`, and open [http://localhost:3000](http://localhost:3000).*
 
 ---
 
-## 🔧 Under the Hood & Architecture
+## 📁 Architecture du Code
 
-AeroTherm 2.0 uses an advanced data polling engine:
-
-```mermaid
-graph TD
-    Sensors[Motherboard, GPU, Disk, Net Sensors] -->|SI & sysfs| NodeServer(Node.js v2 Engine)
-    NodeServer -->|Encapsulated JSON| ClientJS(Universal app.js)
-    ClientJS -->|Dynamic DOM Injection| Dashboard[PRO Glassmorphic UI]
-    ClientJS -->|Network & Storage Mapping| List[Resource Monitors]
 ```
-
-### Fallback Driver (Linux)
-AeroTherm v2.0 features an enhanced intelligent fallback for Linux, scanning `/sys/class/thermal/` to find deep-level sensors that standard libraries might miss.
+thermal-monitor/
+├── widgets/
+│   ├── gauge_widget.py     # Jauge circulaire personnalisée (QPainter)
+│   ├── chart_widget.py     # Graphique en temps réel (pyqtgraph)
+│   └── process_table.py    # Tableau interactif des processus
+├── config/
+│   └── default_config.json # Configuration par défaut
+├── data/
+│   └── aeotherm.db         # Base de données SQLite locale
+├── logs/
+│   └── aeotherm.log        # Fichier journal d'AeroTherm (Loguru)
+├── platform_layer.py       # Abstraction matérielle OS (Win/Linux)
+├── gpu_detector.py         # Détection dynamique des GPUs
+├── models.py               # Modèles de données (Dataclasses)
+├── sensor_engine.py        # Agrégation des relevés physiques
+├── process_manager.py      # Module de contrôle des processus (psutil)
+├── alert_manager.py        # Gestion des seuils et alertes
+├── scheduler.py            # Thread de collecte en tâche de fond
+├── main_window.py          # Fenêtre principale (Feuille de style QSS)
+├── main.py                 # Point d'entrée principal
+└── requirements.txt        # Dépendances du projet
+```
 
 ---
 
-## 📄 License
-This project is licensed under the MIT License. Fait avec amour pour la sécurité de votre matériel.
+## 📄 Licence
+Ce projet est sous licence MIT. Fait avec passion pour la sécurité de votre matériel.
