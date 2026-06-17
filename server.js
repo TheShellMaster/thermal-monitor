@@ -221,13 +221,13 @@ io.on('connection', async (socket) => {
   socket.emit('system-dynamic', initialDynamic);
 });
 
-// Periodic broadcast (every 1.5 seconds)
+// Periodic broadcast (every 5.0 seconds)
 setInterval(async () => {
   if (io.engine.clientsCount > 0) {
     const dynamicData = await getDynamicInfo();
     io.emit('system-dynamic', dynamicData);
   }
-}, 1500);
+}, 5000);
 
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`--------------------------------------------------`);
