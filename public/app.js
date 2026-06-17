@@ -323,3 +323,79 @@ function formatSpeed(bytesPerSec) {
   const kbs = bytesPerSec / 1024;
   return kbs < 1024 ? `${kbs.toFixed(1)} KB/s` : `${(kbs / 1024).toFixed(1)} MB/s`;
 }
+
+// --- Process Manager Client Logic ---
+const refreshProcBtn = document.getElementById('refresh-proc-btn');
+const procListBody = document.getElementById('proc-list-body');
+
+if (refreshProcBtn && procListBody) {
+  // Request processes on click
+  refreshProcBtn.addEventListener('click', () => {
+    refreshProcBtn.disabled = true;
+    refreshProcBtn.textContent = 'Chargement...';
+    socket.emit('get-processes');
+  });
+
+  // Automatically request once on connection
+  socket.on('connect', () => {
+    socket.emit('get-processes');
+  });
+
+  // Receive and render processes list
+  socket.on('processes-list', (processes) => {
+    refreshProcBtn.disabled = false;
+    refreshProcBtn.textContent = 'Rafraîchir les Processus';
+    
+    procListBody.innerHTML = '';
+    
+    if (processes.length === 0) {
+      procListBody.innerHTML = `<tr><td colspan="5" class="text-center">Aucun processus détecté.</td></tr>`;
+      return;
+    }
+    
+    processes.forEach(p => {
+      const tr = document.createElement('tr');
+      
+      // Determine if CPU or RAM usage is high to apply color warning
+      const cpuVal = parseFloat(p.cpu);
+      const memVal = parseFloat(p.mem);
+      const cpuStyle = cpuVal > 50 ? 'color: var(--color-red); font-weight: bold;' : '';
+      const memStyle = memVal > 5 ? 'color: var(--color-orange);' : '';
+      
+      tr.innerHTML = `
+        <td><code>${p.pid}</code></td>
+        <td><strong>${p.name}</strong> <span style="font-size:0.75rem; color:var(--color-text-sub)">(${p.user})</span></td>
+        <td style="${cpuStyle}">${cpuVal.toFixed(1)} %</td>
+        <td style="${memStyle}">${memVal.toFixed(1)} %</td>
+        <td>
+          <button class="btn btn-danger kill-btn" data-pid="${p.pid}" data-name="${p.name}">Tuer</button>
+        </td>
+      `;
+      procListBody.appendChild(tr);
+    });
+  });
+
+  // Handle click on Kill button (delegated)
+  procListBody.addEventListener('click', (e) => {
+    if (e.target.classList.contains('kill-btn')) {
+      const pid = e.target.getAttribute('data-pid');
+      const name = e.target.getAttribute('data-name');
+      
+      if (confirm(`Voulez-vous vraiment arrêter le processus "${name}" (PID: ${pid}) ?`)) {
+        socket.emit('kill-process', pid);
+      }
+    }
+  });
+
+  // Handle kill confirmation status
+  socket.on('kill-status', (data) => {
+    if (data.success) {
+      alert(`Processus ${data.pid} arrêté avec succès.`);
+      // Refresh the list immediately
+      socket.emit('get-processes');
+    } else {
+      alert(`Erreur lors de l'arrêt du processus ${data.pid} : ${data.error}`);
+    }
+  });
+}
+

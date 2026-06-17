@@ -219,6 +219,42 @@ io.on('connection', async (socket) => {
   // Send initial dynamic info
   const initialDynamic = await getDynamicInfo();
   socket.emit('system-dynamic', initialDynamic);
+
+  // List processes request
+  socket.on('get-processes', async () => {
+    try {
+      const procData = await si.processes();
+      // Sort by CPU usage descending and get top 15
+      const list = (procData.list || [])
+        .sort((a, b) => b.cpu - a.cpu)
+        .slice(0, 15)
+        .map(p => ({
+          pid: p.pid,
+          name: p.name,
+          cpu: p.cpu,
+          mem: p.mem,
+          state: p.state,
+          user: p.user
+        }));
+      socket.emit('processes-list', list);
+    } catch (err) {
+      console.error('Error fetching processes:', err);
+    }
+  });
+
+  // Kill process request
+  socket.on('kill-process', (pid) => {
+    try {
+      const targetPid = parseInt(pid, 10);
+      if (isNaN(targetPid) || targetPid <= 0) return;
+      process.kill(targetPid, 'SIGTERM');
+      console.log(`Successfully sent SIGTERM to process ${targetPid}`);
+      socket.emit('kill-status', { success: true, pid: targetPid });
+    } catch (err) {
+      console.error(`Failed to kill process ${pid}:`, err.message);
+      socket.emit('kill-status', { success: false, pid: pid, error: err.message });
+    }
+  });
 });
 
 // Periodic broadcast (every 5.0 seconds)

@@ -733,7 +733,7 @@ input:checked + .toggle-slider:before {
     gap: 16px;
   }
   
-  .stats-card, .chart-card, .settings-card, .system-info-card, .tips-card {
+  .stats-card, .chart-card, .settings-card, .system-info-card, .tips-card, .processes-card {
     grid-column: span 1;
   }
   
@@ -742,3 +742,87 @@ input:checked + .toggle-slider:before {
     align-items: center;
   }
 }
+
+/* --- Process Manager UI Styles --- */
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn {
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #00f0ff, #8a2be2);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
+}
+
+.btn-danger {
+  background: rgba(255, 51, 102, 0.15);
+  color: var(--color-red);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+}
+
+.btn-danger:hover {
+  background: var(--color-red);
+  color: #fff;
+  box-shadow: 0 4px 12px var(--color-red-glow);
+  transform: scale(1.05);
+}
+
+.proc-table-wrapper {
+  overflow-x: auto;
+  flex-grow: 1;
+}
+
+.proc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.proc-table th {
+  padding: 10px 12px;
+  color: var(--color-text-sub);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.proc-table td {
+  padding: 10px 12px;
+  color: var(--color-text-main);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.proc-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.processes-card {
+  grid-column: span 3;
+}
+
