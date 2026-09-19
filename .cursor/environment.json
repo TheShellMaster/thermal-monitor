@@ -1,0 +1,17 @@
+{
+  "name": "AeroTherm Thermal Monitor",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "server",
+      "command": "node server.js",
+      "description": "AeroTherm Express + Socket.io dashboard server on http://localhost:3000"
+    }
+  ],
+  "ports": [
+    {
+      "name": "AeroTherm dashboard",
+      "port": 3000
+    }
+  ]
+}
